@@ -1,1 +1,550 @@
-xyz
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Intern KPI Dashboard — MySoulSchool</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #f5f5f3;
+    --surface: #ffffff;
+    --surface-alt: #f9f9f7;
+    --border: rgba(0,0,0,0.10);
+    --border-strong: rgba(0,0,0,0.18);
+    --text: #0b0b0b;
+    --text-sec: #52514e;
+    --text-muted: #898781;
+    --accent: #2a78d6;
+    --green: #0ca30c;
+    --yellow: #eda100;
+    --red: #d03b3b;
+    --green-bg: #eaf3de;
+    --green-text: #27500a;
+    --yellow-bg: #faeeda;
+    --yellow-text: #633806;
+    --red-bg: #fcebeb;
+    --red-text: #501313;
+    --danger-bg: #fcebeb;
+    --danger-border: rgba(208,59,59,0.25);
+    --danger-text: #791f1f;
+    --radius: 8px;
+  }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.6; }
+  .shell { max-width: 1100px; margin: 0 auto; padding: 24px 20px; }
+
+  /* Header */
+  .header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 24px; }
+  .header h1 { font-size: 20px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .header-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .last-updated { font-size: 12px; color: var(--text-muted); }
+  select { font-size: 13px; padding: 7px 12px; border-radius: var(--radius); border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); cursor: pointer; }
+  select:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .btn-refresh { display: flex; align-items: center; gap: 6px; font-size: 13px; padding: 7px 14px; border-radius: var(--radius); border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); cursor: pointer; font-weight: 500; }
+  .btn-refresh:hover { background: var(--surface-alt); }
+
+  /* Alerts */
+  .alert-box { background: var(--danger-bg); border: 1px solid var(--danger-border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 20px; }
+  .alert-title { font-size: 13px; font-weight: 600; color: var(--danger-text); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+  .alert-item { font-size: 12px; color: var(--danger-text); padding: 3px 0 3px 20px; border-bottom: 1px solid rgba(208,59,59,0.1); }
+  .alert-item:last-child { border-bottom: none; }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 0; margin-bottom: 20px; border-bottom: 1.5px solid var(--border); }
+  .tab { padding: 10px 20px; font-size: 13px; font-weight: 500; color: var(--text-muted); cursor: pointer; border: none; background: none; border-bottom: 2.5px solid transparent; margin-bottom: -1.5px; transition: color 0.15s, border-color 0.15s; }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* Filter bar */
+  .filter-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+  .filter-bar label { font-size: 12px; color: var(--text-sec); font-weight: 500; }
+
+  /* KPI grid */
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .kpi-card { background: var(--surface); border-radius: 12px; border: 1px solid var(--border); padding: 16px; }
+  .kpi-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+  .kpi-value { font-size: 26px; font-weight: 600; color: var(--text); }
+  .kpi-sub { font-size: 11px; margin-top: 4px; color: var(--text-muted); }
+  .kpi-value.green { color: var(--green); }
+  .kpi-value.yellow { color: var(--yellow); }
+  .kpi-value.red { color: var(--red); }
+
+  /* Table */
+  .table-wrap { overflow-x: auto; background: var(--surface); border-radius: 12px; border: 1px solid var(--border); margin-bottom: 20px; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 600px; }
+  th { text-align: left; padding: 10px 14px; background: var(--surface-alt); color: var(--text-muted); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--surface-alt); }
+
+  /* Badges */
+  .badge { display: inline-block; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+  .badge-green { background: var(--green-bg); color: var(--green-text); }
+  .badge-yellow { background: var(--yellow-bg); color: var(--yellow-text); }
+  .badge-red { background: var(--red-bg); color: var(--red-text); }
+
+  /* Chart */
+  .chart-card { background: var(--surface); border-radius: 12px; border: 1px solid var(--border); padding: 20px; margin-bottom: 20px; }
+  .chart-card h3 { font-size: 13px; font-weight: 600; color: var(--text-sec); margin-bottom: 16px; }
+  .chart-wrap { position: relative; width: 100%; height: 220px; }
+
+  /* Leaderboard */
+  .lb-card { background: var(--surface); border-radius: 12px; border: 1px solid var(--border); padding: 20px; }
+  .lb-formula { font-size: 11px; color: var(--text-muted); margin-bottom: 16px; padding: 8px 12px; background: var(--surface-alt); border-radius: var(--radius); }
+  .lb-row { display: flex; align-items: center; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+  .lb-row:last-child { border-bottom: none; }
+  .lb-rank { font-size: 20px; width: 32px; text-align: center; flex-shrink: 0; }
+  .lb-name { flex: 1; font-size: 14px; font-weight: 600; }
+  .lb-bar-wrap { flex: 2; height: 8px; background: var(--surface-alt); border-radius: 4px; overflow: hidden; }
+  .lb-bar { height: 100%; border-radius: 4px; background: var(--accent); }
+  .lb-scores { text-align: right; min-width: 90px; }
+  .lb-score-main { font-size: 16px; font-weight: 700; }
+  .lb-score-sub { font-size: 11px; color: var(--text-muted); }
+
+  /* Loading / error */
+  .loading { text-align: center; padding: 40px; color: var(--text-muted); font-size: 14px; }
+  .error-box { background: var(--danger-bg); border: 1px solid var(--danger-border); border-radius: var(--radius); padding: 16px; color: var(--danger-text); font-size: 13px; margin-bottom: 20px; }
+  .error-box strong { display: block; margin-bottom: 6px; }
+  .no-data { color: var(--text-muted); font-size: 13px; padding: 24px; text-align: center; }
+
+  /* Legend */
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 6px; }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text-sec); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 2px; }
+
+  @media (max-width: 600px) {
+    .shell { padding: 16px 12px; }
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .tab { padding: 8px 12px; font-size: 12px; }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <div class="header">
+    <h1><i class="ti ti-chart-bar"></i> Intern KPI Dashboard</h1>
+    <div class="header-right">
+      <span class="last-updated" id="lastUpdated">Loading...</span>
+      <select id="dateFilter">
+        <option value="today">Today</option>
+        <option value="yesterday">Yesterday</option>
+        <option value="this_week" selected>This week</option>
+        <option value="last_week">Last week</option>
+        <option value="this_month">This month</option>
+        <option value="last_month">Last month</option>
+        <option value="last_3months">Last 3 months</option>
+        <option value="last_6months">Last 6 months</option>
+        <option value="ytd">Year to date</option>
+      </select>
+      <button class="btn-refresh" onclick="loadData()"><i class="ti ti-refresh"></i> Refresh</button>
+    </div>
+  </div>
+
+  <div id="errorBox"></div>
+  <div id="alertBox"></div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('individual')"><i class="ti ti-user"></i> Individual view</button>
+    <button class="tab" onclick="switchTab('team')"><i class="ti ti-users"></i> Team view</button>
+    <button class="tab" onclick="switchTab('leaderboard')"><i class="ti ti-trophy"></i> Leaderboard</button>
+  </div>
+
+  <!-- INDIVIDUAL -->
+  <div id="individual" class="section active">
+    <div class="filter-bar">
+      <label>Intern:</label>
+      <select id="internSelect" onchange="renderIndividual()"></select>
+    </div>
+    <div id="indKpis" class="kpi-grid"></div>
+    <div class="chart-card">
+      <h3>Connected ratio trend</h3>
+      <div class="legend">
+        <span class="legend-item"><span class="legend-dot" style="background:#2a78d6"></span>Avg ratio</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#0ca30c;opacity:0.6"></span>Target 55%</span>
+      </div>
+      <div class="chart-wrap"><canvas id="trendChart" role="img" aria-label="Connected ratio trend line chart"></canvas></div>
+    </div>
+    <div class="table-wrap">
+      <table id="indTable">
+        <thead><tr><th>Date</th><th>Quality</th><th>Tarot ratio</th><th>Reiki ratio</th><th>TMR ratio</th><th>Avg ratio</th><th>Composite score</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TEAM -->
+  <div id="team" class="section">
+    <div id="teamKpis" class="kpi-grid"></div>
+    <div class="table-wrap">
+      <table id="teamTable">
+        <thead><tr><th>Intern</th><th>Days</th><th>Avg quality</th><th>Tarot ratio</th><th>Reiki ratio</th><th>TMR ratio</th><th>Avg ratio</th><th>Score</th><th>Status</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- LEADERBOARD -->
+  <div id="leaderboard" class="section">
+    <div class="filter-bar">
+      <label>Period:</label>
+      <select id="lbPeriod" onchange="renderLeaderboard()">
+        <option value="this_week">This week</option>
+        <option value="this_month">This month</option>
+      </select>
+    </div>
+    <div class="lb-card">
+      <div class="lb-formula">Score = (Avg Connected Ratio × 70%) + (Quality Score ÷ 5 × 100 × 30%) — categories with 0 leads are excluded</div>
+      <div id="lbList"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const API = 'https://script.google.com/macros/s/AKfycbwYx3UhVV78GRLJU2wAAo-TZfOpxzSHPbGgQ__g3XVJVCAkccD8FUSLNkOzwAFxGLcIWg/exec';
+const EXCLUDE = ['Daily Call Recordings', 'Meeting Attendance', 'Weekly Leaves'];
+const BENCHMARK = 55;
+let allData = {};
+let trendChartInst = null;
+
+// ── DATE HELPERS ──────────────────────────────────────────────
+function parseDate(str) {
+  if (!str || typeof str !== 'string') return null;
+  const s = str.trim();
+  const months = { Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11 };
+  // "Mon, 29 Jun 2026"
+  const m1 = s.match(/\w+,\s*(\d{1,2})\s+(\w+)\s+(\d{4})/);
+  if (m1) return new Date(+m1[3], months[m1[2]] ?? 0, +m1[1]);
+  // "2026-06-29"
+  const m2 = s.match(/(\d{4})-(\d{2})-(\d{2})/);
+  if (m2) return new Date(+m2[1], +m2[2]-1, +m2[3]);
+  const d = new Date(s);
+  return isNaN(d) ? null : d;
+}
+
+function getDateRange(filter) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const dow = today.getDay();
+  const monOffset = dow === 0 ? -6 : 1 - dow;
+  const thisWeekMon = new Date(today); thisWeekMon.setDate(today.getDate() + monOffset);
+  const lastWeekMon = new Date(thisWeekMon); lastWeekMon.setDate(thisWeekMon.getDate() - 7);
+  const lastWeekSun = new Date(thisWeekMon); lastWeekSun.setDate(thisWeekMon.getDate() - 1);
+  const thisMonStart = new Date(today.getFullYear(), today.getMonth(), 1);
+  const lastMonStart = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+  const lastMonEnd   = new Date(today.getFullYear(), today.getMonth(), 0);
+  const yesterday    = new Date(today); yesterday.setDate(today.getDate() - 1);
+  const ranges = {
+    today:        { start: today,        end: today },
+    yesterday:    { start: yesterday,    end: yesterday },
+    this_week:    { start: thisWeekMon,  end: today },
+    last_week:    { start: lastWeekMon,  end: lastWeekSun },
+    this_month:   { start: thisMonStart, end: today },
+    last_month:   { start: lastMonStart, end: lastMonEnd },
+    last_3months: { start: new Date(today.getFullYear(), today.getMonth()-3, today.getDate()), end: today },
+    last_6months: { start: new Date(today.getFullYear(), today.getMonth()-6, today.getDate()), end: today },
+    ytd:          { start: new Date(today.getFullYear(), 0, 1), end: today },
+  };
+  return ranges[filter] || ranges.this_week;
+}
+
+function filterRows(rows, filter) {
+  const { start, end } = getDateRange(filter);
+  return rows.filter(r => r.date >= start && r.date <= end);
+}
+
+// ── PARSE SHEET ───────────────────────────────────────────────
+function parseSheet(rows) {
+  const data = [];
+  if (!rows || rows.length < 3) return data;
+  for (let i = 2; i < rows.length; i++) {
+    const r = rows[i];
+    const dStr = String(r[1] || '').trim();
+    if (!dStr || dStr === 'Week Start Date' || dStr === 'Weekly Progress') continue;
+    const d = parseDate(dStr);
+    if (!d) continue;
+    data.push({
+      date: d, dateStr: dStr,
+      quality:        parseFloat(r[2]) || 0,
+      tarotAssigned:  parseFloat(r[3]) || 0,
+      tarotAttempted: parseFloat(r[4]) || 0,
+      tarotConnected: parseFloat(r[5]) || 0,
+      tarotRatio:     parseFloat(String(r[6]).replace('%','')) || 0,
+      reikiAssigned:  parseFloat(r[7]) || 0,
+      reikiAttempted: parseFloat(r[8]) || 0,
+      reikiConnected: parseFloat(r[9]) || 0,
+      reikiRatio:     parseFloat(String(r[10]).replace('%','')) || 0,
+      tmrAssigned:    parseFloat(r[11]) || 0,
+      tmrAttempted:   parseFloat(r[12]) || 0,
+      tmrConnected:   parseFloat(r[13]) || 0,
+      tmrRatio:       parseFloat(String(r[14]).replace('%','')) || 0,
+    });
+  }
+  return data;
+}
+
+// ── CALCULATIONS ──────────────────────────────────────────────
+function avgRatio(row) {
+  const active = [];
+  if (row.tarotAssigned > 0) active.push(row.tarotRatio);
+  if (row.reikiAssigned > 0) active.push(row.reikiRatio);
+  if (row.tmrAssigned   > 0) active.push(row.tmrRatio);
+  if (!active.length) return 0;
+  return active.reduce((a,b) => a+b, 0) / active.length;
+}
+
+function compositeScore(ratio, quality) {
+  const qNorm = (quality / 5) * 100;
+  return (ratio * 0.7) + (qNorm * 0.3);
+}
+
+function ratioClass(v) {
+  return v >= BENCHMARK ? 'green' : v >= 50 ? 'yellow' : 'red';
+}
+
+function ratioBadge(v, assigned) {
+  if (!assigned || assigned === 0) return '<span style="color:#898781">—</span>';
+  const cls = v >= BENCHMARK ? 'badge-green' : v >= 50 ? 'badge-yellow' : 'badge-red';
+  return `<span class="badge ${cls}">${v.toFixed(1)}%</span>`;
+}
+
+function fmtDate(str) {
+  return str.replace(/^(Mon|Tue|Wed|Thu|Fri|Sat|Sun),\s*/, '');
+}
+
+// ── DISCREPANCY CHECK ─────────────────────────────────────────
+function checkDiscrepancies(internName, rows) {
+  const issues = [];
+  rows.forEach(r => {
+    const d = r.dateStr;
+    if (r.tarotAttempted > 0 && r.tarotConnected > r.tarotAttempted)
+      issues.push(`${internName} · ${d} — Tarot Connected (${r.tarotConnected}) > Attempted (${r.tarotAttempted})`);
+    if (r.reikiAttempted > 0 && r.reikiConnected > r.reikiAttempted)
+      issues.push(`${internName} · ${d} — Reiki Connected (${r.reikiConnected}) > Attempted (${r.reikiAttempted})`);
+    if (r.tmrAttempted > 0 && r.tmrConnected > r.tmrAttempted)
+      issues.push(`${internName} · ${d} — TMR Connected (${r.tmrConnected}) > Attempted (${r.tmrAttempted})`);
+    if (r.reikiRatio > 100 && r.reikiAssigned > 0)
+      issues.push(`${internName} · ${d} — Reiki ratio ${r.reikiRatio.toFixed(1)}% is impossible (>100%)`);
+    if (r.tarotRatio > 100 && r.tarotAssigned > 0)
+      issues.push(`${internName} · ${d} — Tarot ratio ${r.tarotRatio.toFixed(1)}% is impossible (>100%)`);
+    if (r.tmrRatio > 100 && r.tmrAssigned > 0)
+      issues.push(`${internName} · ${d} — TMR ratio ${r.tmrRatio.toFixed(1)}% is impossible (>100%)`);
+  });
+  return issues;
+}
+
+function renderAlerts() {
+  const all = [];
+  Object.entries(allData).forEach(([name, rows]) => all.push(...checkDiscrepancies(name, rows)));
+  const box = document.getElementById('alertBox');
+  if (!all.length) { box.innerHTML = ''; return; }
+  box.innerHTML = `<div class="alert-box">
+    <div class="alert-title"><i class="ti ti-alert-triangle"></i> ${all.length} data discrepanc${all.length>1?'ies':'y'} found — share with Deesha to review and fix</div>
+    ${all.map(i => `<div class="alert-item">⚠ ${i}</div>`).join('')}
+  </div>`;
+}
+
+// ── TAB SWITCH ────────────────────────────────────────────────
+function switchTab(t) {
+  document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  const idx = ['individual','team','leaderboard'].indexOf(t);
+  document.querySelectorAll('.tab')[idx].classList.add('active');
+  document.getElementById(t).classList.add('active');
+  if (t === 'individual') renderIndividual();
+  if (t === 'team')       renderTeam();
+  if (t === 'leaderboard') renderLeaderboard();
+}
+
+// ── INDIVIDUAL VIEW ───────────────────────────────────────────
+function renderIndividual() {
+  const intern = document.getElementById('internSelect').value;
+  const filter = document.getElementById('dateFilter').value;
+  const rows   = filterRows(allData[intern] || [], filter);
+  const kpiDiv = document.getElementById('indKpis');
+  const tbody  = document.querySelector('#indTable tbody');
+
+  if (!rows.length) {
+    kpiDiv.innerHTML = '';
+    tbody.innerHTML = '<tr><td colspan="7" class="no-data">No data for this period</td></tr>';
+    if (trendChartInst) { trendChartInst.destroy(); trendChartInst = null; }
+    return;
+  }
+
+  const activeDays = rows.filter(r => r.tarotAssigned > 0 || r.reikiAssigned > 0 || r.tmrAssigned > 0).length;
+  const qualRows   = rows.filter(r => r.quality > 0);
+  const avgQ       = qualRows.length ? qualRows.reduce((a,r) => a + r.quality, 0) / qualRows.length : 0;
+  const ratios     = rows.map(avgRatio);
+  const overallAvg = ratios.reduce((a,b) => a+b, 0) / (ratios.length || 1);
+  const daysAbove  = rows.filter(r => avgRatio(r) >= BENCHMARK).length;
+  const avgScore   = rows.map(r => compositeScore(avgRatio(r), r.quality)).reduce((a,b) => a+b, 0) / (rows.length || 1);
+  const rc         = ratioClass(overallAvg);
+
+  kpiDiv.innerHTML = `
+    <div class="kpi-card"><div class="kpi-label">Active days</div><div class="kpi-value">${activeDays}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Avg connected ratio</div><div class="kpi-value ${rc}">${overallAvg.toFixed(1)}%</div><div class="kpi-sub">${overallAvg >= BENCHMARK ? '✓ Above 55% target' : '✗ Below 55% target'}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Days above 55%</div><div class="kpi-value">${daysAbove}<span style="font-size:16px;font-weight:400;color:var(--text-muted)"> / ${rows.length}</span></div></div>
+    <div class="kpi-card"><div class="kpi-label">Avg quality score</div><div class="kpi-value">${avgQ > 0 ? avgQ.toFixed(1) : '—'}<span style="font-size:14px;font-weight:400;color:var(--text-muted)"> / 5</span></div></div>
+    <div class="kpi-card"><div class="kpi-label">Composite score</div><div class="kpi-value ${rc}">${avgScore.toFixed(1)}</div></div>
+  `;
+
+  tbody.innerHTML = rows.map(r => {
+    const ar = avgRatio(r);
+    const sc = compositeScore(ar, r.quality);
+    return `<tr>
+      <td style="white-space:nowrap;font-weight:500">${fmtDate(r.dateStr)}</td>
+      <td>${r.quality > 0 ? r.quality.toFixed(1) : '<span style="color:var(--text-muted)">—</span>'}</td>
+      <td>${ratioBadge(r.tarotRatio, r.tarotAssigned)}</td>
+      <td>${ratioBadge(r.reikiRatio, r.reikiAssigned)}</td>
+      <td>${ratioBadge(r.tmrRatio, r.tmrAssigned)}</td>
+      <td>${ratioBadge(ar, 1)}</td>
+      <td style="font-weight:600">${sc.toFixed(1)}</td>
+    </tr>`;
+  }).join('');
+
+  // Chart
+  const labels  = rows.map(r => fmtDate(r.dateStr));
+  const data    = ratios.map(v => parseFloat(v.toFixed(1)));
+  const ctx     = document.getElementById('trendChart');
+  if (trendChartInst) { trendChartInst.destroy(); }
+  trendChartInst = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets: [
+      { label: 'Avg ratio', data, borderColor: '#2a78d6', backgroundColor: 'rgba(42,120,214,0.08)', borderWidth: 2, pointRadius: 4, pointBackgroundColor: '#2a78d6', tension: 0.3, fill: true },
+      { label: 'Target', data: labels.map(() => 55), borderColor: '#0ca30c', borderWidth: 1.5, borderDash: [5,4], pointRadius: 0, fill: false },
+    ]},
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { min: 0, max: 100, ticks: { callback: v => v + '%', color: '#898781', font: { size: 11 } }, grid: { color: 'rgba(0,0,0,0.05)' } },
+        x: { ticks: { color: '#898781', font: { size: 10 }, maxRotation: 45, autoSkip: true, maxTicksLimit: 14 }, grid: { display: false } }
+      }
+    }
+  });
+}
+
+// ── TEAM VIEW ─────────────────────────────────────────────────
+function renderTeam() {
+  const filter   = document.getElementById('dateFilter').value;
+  const tbody    = document.querySelector('#teamTable tbody');
+  const kpiDiv   = document.getElementById('teamKpis');
+  const interns  = Object.keys(allData);
+  if (!interns.length) { tbody.innerHTML = '<tr><td colspan="9" class="no-data">No data loaded</td></tr>'; return; }
+
+  const summaries = interns.map(name => {
+    const rows = filterRows(allData[name], filter);
+    if (!rows.length) return { name, days: 0, avgQ: 0, tarot: 0, reiki: 0, tmr: 0, avg: 0, score: 0 };
+    const qualRows = rows.filter(r => r.quality > 0);
+    const avgQ     = qualRows.length ? qualRows.reduce((a,r) => a + r.quality, 0) / qualRows.length : 0;
+    const tRows    = rows.filter(r => r.tarotAssigned > 0);
+    const rRows    = rows.filter(r => r.reikiAssigned > 0);
+    const mRows    = rows.filter(r => r.tmrAssigned   > 0);
+    const tarot    = tRows.length ? tRows.reduce((a,r) => a + r.tarotRatio, 0) / tRows.length : 0;
+    const reiki    = rRows.length ? rRows.reduce((a,r) => a + r.reikiRatio, 0) / rRows.length : 0;
+    const tmr      = mRows.length ? mRows.reduce((a,r) => a + r.tmrRatio,   0) / mRows.length : 0;
+    const ratios   = rows.map(avgRatio);
+    const avg      = ratios.reduce((a,b) => a+b, 0) / (ratios.length || 1);
+    const score    = compositeScore(avg, avgQ);
+    return { name, days: rows.length, avgQ, tarot, reiki, tmr, avg, score, tActive: tRows.length > 0, rActive: rRows.length > 0, mActive: mRows.length > 0 };
+  });
+
+  const teamAvg = summaries.reduce((a,s) => a + s.avg, 0) / (summaries.length || 1);
+  const above   = summaries.filter(s => s.avg >= BENCHMARK).length;
+  const top     = [...summaries].sort((a,b) => b.score - a.score)[0];
+
+  kpiDiv.innerHTML = `
+    <div class="kpi-card"><div class="kpi-label">Team avg ratio</div><div class="kpi-value ${ratioClass(teamAvg)}">${teamAvg.toFixed(1)}%</div><div class="kpi-sub">${teamAvg >= BENCHMARK ? '✓ On target' : '✗ Below target'}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Above 55% target</div><div class="kpi-value">${above}<span style="font-size:16px;font-weight:400;color:var(--text-muted)"> / ${summaries.length}</span></div></div>
+    <div class="kpi-card"><div class="kpi-label">Top performer</div><div class="kpi-value" style="font-size:18px">${top ? top.name : '—'}</div><div class="kpi-sub">${top ? 'Score: ' + top.score.toFixed(1) : ''}</div></div>
+  `;
+
+  const sorted = [...summaries].sort((a,b) => b.score - a.score);
+  tbody.innerHTML = sorted.map(s => {
+    const status = s.avg >= BENCHMARK ? ['badge-green','On track'] : s.avg >= 50 ? ['badge-yellow','Watch'] : ['badge-red','At risk'];
+    return `<tr>
+      <td style="font-weight:600">${s.name}</td>
+      <td>${s.days}</td>
+      <td>${s.avgQ > 0 ? s.avgQ.toFixed(1) : '<span style="color:var(--text-muted)">—</span>'}</td>
+      <td>${ratioBadge(s.tarot, s.tActive ? 1 : 0)}</td>
+      <td>${ratioBadge(s.reiki, s.rActive ? 1 : 0)}</td>
+      <td>${ratioBadge(s.tmr,   s.mActive ? 1 : 0)}</td>
+      <td>${ratioBadge(s.avg, 1)}</td>
+      <td style="font-weight:600">${s.score.toFixed(1)}</td>
+      <td><span class="badge ${status[0]}">${status[1]}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+// ── LEADERBOARD ───────────────────────────────────────────────
+function renderLeaderboard() {
+  const filter  = document.getElementById('lbPeriod').value;
+  const interns = Object.keys(allData);
+  const ranked  = interns.map(name => {
+    const rows   = filterRows(allData[name], filter);
+    if (!rows.length) return { name, score: 0, ratio: 0, quality: 0 };
+    const qualRows = rows.filter(r => r.quality > 0);
+    const avgQ     = qualRows.length ? qualRows.reduce((a,r) => a + r.quality, 0) / qualRows.length : 0;
+    const ratios   = rows.map(avgRatio);
+    const avgR     = ratios.reduce((a,b) => a+b, 0) / (ratios.length || 1);
+    return { name, ratio: avgR, quality: avgQ, score: compositeScore(avgR, avgQ) };
+  }).sort((a,b) => b.score - a.score);
+
+  const max    = ranked[0]?.score || 100;
+  const medals = ['🥇','🥈','🥉'];
+  const list   = document.getElementById('lbList');
+
+  if (!ranked.length) { list.innerHTML = '<p class="no-data">No data for this period</p>'; return; }
+
+  list.innerHTML = ranked.map((r, i) => `
+    <div class="lb-row">
+      <div class="lb-rank">${medals[i] || (i+1)}</div>
+      <div class="lb-name">${r.name}</div>
+      <div class="lb-bar-wrap"><div class="lb-bar" style="width:${Math.round((r.score/max)*100)}%"></div></div>
+      <div class="lb-scores">
+        <div class="lb-score-main ${ratioClass(r.ratio)}">${r.score.toFixed(1)}</div>
+        <div class="lb-score-sub">${r.ratio.toFixed(1)}% ratio · Q:${r.quality > 0 ? r.quality.toFixed(1) : '—'}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── LOAD DATA ─────────────────────────────────────────────────
+async function loadData() {
+  document.getElementById('lastUpdated').textContent = 'Fetching...';
+  document.getElementById('errorBox').innerHTML = '';
+  try {
+    const res  = await fetch(API);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+    allData = {};
+    Object.entries(json).forEach(([name, rows]) => {
+      if (!EXCLUDE.includes(name)) allData[name] = parseSheet(rows);
+    });
+    const names = Object.keys(allData);
+    const sel   = document.getElementById('internSelect');
+    sel.innerHTML = names.map(n => `<option value="${n}">${n}</option>`).join('');
+    renderAlerts();
+    renderIndividual();
+    document.getElementById('lastUpdated').textContent = 'Updated: ' + new Date().toLocaleTimeString();
+  } catch(e) {
+    document.getElementById('errorBox').innerHTML = `<div class="error-box"><strong>Could not load data from Google Sheets.</strong>The Apps Script may need to be redeployed. Error: ${e.message}</div>`;
+    document.getElementById('lastUpdated').textContent = 'Failed to load';
+  }
+}
+
+document.getElementById('dateFilter').addEventListener('change', () => {
+  const active = document.querySelector('.section.active')?.id;
+  if (active === 'individual') renderIndividual();
+  if (active === 'team')       renderTeam();
+  if (active === 'leaderboard') renderLeaderboard();
+});
+
+loadData();
+</script>
+</body>
+</html>
