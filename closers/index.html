@@ -198,9 +198,9 @@ select{
 <script>
 // ============ CONFIG ============
 // Replace with your deployed Apps Script Web App URL (ends in /exec)
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzFr0LnKQ-Q4JEoaHY3KMNTh-8ce-NfwPdMcGeXizYbcvsy0gioQkwgL84evFqzykmp/exec";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyse1cWGQYlQXVT13_GxgaN_QPa0jEzQuBg5XAoj2JhH2hDWaewcGZb8j6icFgjopmn/exec";
 
-const CLOSERS = ["Vandna", "Bhumika", "Rahul", "Rudrani"];
+let CLOSERS = []; // populated from API response after load
 const BENCHMARKS = {
   connectedRatio: { green: 60, yellow: 55 },   // >= green, else >= yellow, else red
   conversionRate: { green: 2, yellow: 1.5 },
@@ -212,7 +212,6 @@ let indChart, teamChart1, teamChart2;
 
 // ============ INIT ============
 async function init() {
-  populateCloserSelect();
   wireTabs();
   wireLeaderboardToggle();
   document.getElementById('dateFilter').addEventListener('change', renderAll);
@@ -221,6 +220,9 @@ async function init() {
     const res = await fetch(APPS_SCRIPT_URL);
     if (!res.ok) throw new Error('Network response was not ok');
     RAW = await res.json();
+    CLOSERS = Object.keys(RAW).sort();
+    if (CLOSERS.length === 0) throw new Error('No closer tabs found in the sheet');
+    populateCloserSelect();
     renderAll();
   } catch (err) {
     document.getElementById('alertBox').innerHTML =
