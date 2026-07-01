@@ -124,7 +124,9 @@
       <label>To</label>
       <input type="date" id="toDate">
     </div>
+    <button class="quiet" id="todayBtn">Today</button>
     <button class="quiet" id="last7Btn">Last 7 days</button>
+    <button class="quiet" id="lastWeekBtn">Last week</button>
     <button class="primary" id="refreshBtn">Refresh</button>
     <div class="status-row">
       <span class="dot" id="statusDot"></span>
@@ -149,7 +151,7 @@
 
 <script>
   // ---- CONFIGURE THIS: paste your Apps Script /exec URL here ----
-  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwWFpdExu1Fj1DyaUWW2I1ugVozaHunt9oza1EO8D2DA8gE0_iiOZmnVjYu-aKfLVDnnA/exec';
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxBEcvV12Cr0pUvDxa3q6_VEYtZenli80L3Yoxsubqkg1waS-OG8XIhEMFg2IysUFk/exec';
 
   const PROGRAM_ORDER = ['UTW Invitation','Day 1 Attendees','Day 2 Attendees','Reiki Invitation Calls FMS','TMR'];
 
@@ -169,6 +171,26 @@
     from.setDate(from.getDate() - 7);
     fromInput.value = fmt(from);
     toInput.value = fmt(to);
+  }
+  function setToday(){
+    const t = new Date();
+    fromInput.value = fmt(t);
+    toInput.value = fmt(t);
+  }
+  function getMonday(d){
+    const date = new Date(d);
+    const day = date.getDay(); // 0=Sun..6=Sat
+    const diff = (day === 0 ? -6 : 1) - day; // shift back to Monday
+    date.setDate(date.getDate() + diff);
+    date.setHours(0,0,0,0);
+    return date;
+  }
+  function setLastWeek(){
+    const thisMonday = getMonday(new Date());
+    const lastMonday = new Date(thisMonday); lastMonday.setDate(lastMonday.getDate() - 7);
+    const lastSunday = new Date(thisMonday); lastSunday.setDate(lastSunday.getDate() - 1);
+    fromInput.value = fmt(lastMonday);
+    toInput.value = fmt(lastSunday);
   }
   function displayDate(iso){
     const d = new Date(iso);
@@ -283,7 +305,9 @@
     }).join('');
   }
 
+  document.getElementById('todayBtn').onclick = () => { setToday(); loadData(); };
   document.getElementById('last7Btn').onclick = () => { setDefaultRange(); loadData(); };
+  document.getElementById('lastWeekBtn').onclick = () => { setLastWeek(); loadData(); };
   document.getElementById('refreshBtn').onclick = loadData;
 
   setDefaultRange();
