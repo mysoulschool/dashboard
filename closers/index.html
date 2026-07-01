@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Closers KPI Dashboard — MySoulSchool</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#0f1115;
+  --surface-1:#161920;
+  --surface-2:#1d212b;
+  --border-strong:#2b3040;
+  --border-soft:#232733;
+  --text-primary:#eef0f4;
+  --text-secondary:#a7adbb;
+  --text-muted:#6b7180;
+  --text-danger:#ff8080;
+  --bg-danger:#3a1a1a;
+  --green:#3ecf8e;
+  --green-bg:rgba(62,207,142,0.12);
+  --yellow:#e8b93f;
+  --yellow-bg:rgba(232,185,63,0.12);
+  --red:#ef5f5f;
+  --red-bg:rgba(239,95,95,0.12);
+  --accent:#7c9eff;
+  --radius:8px;
+  --radius-lg:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:var(--bg);
+  color:var(--text-primary);
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  font-size:14px;
+  line-height:1.5;
+  padding:1.5rem;
+}
+.dash{max-width:1100px;margin:0 auto}
+.top-bar{
+  display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:1.25rem;flex-wrap:wrap;gap:0.75rem;
+}
+.top-bar h1{font-size:20px;font-weight:700;letter-spacing:-0.01em}
+.top-bar .sub{color:var(--text-secondary);font-size:12.5px;margin-top:2px}
+select{
+  font-size:13px;padding:7px 10px;border-radius:var(--radius);
+  border:1px solid var(--border-strong);background:var(--surface-2);
+  color:var(--text-primary);cursor:pointer;
+}
+.tabs{display:flex;gap:4px;margin-bottom:1.25rem;background:var(--surface-1);padding:4px;border-radius:var(--radius-lg);width:fit-content}
+.tab{
+  padding:8px 16px;border-radius:var(--radius);border:none;background:transparent;
+  color:var(--text-secondary);font-size:13.5px;font-weight:600;cursor:pointer;transition:all .15s;
+}
+.tab.active{background:var(--surface-2);color:var(--text-primary)}
+.tab:hover:not(.active){color:var(--text-primary)}
+.section{display:none}
+.section.active{display:block}
+
+#alertBox{margin-bottom:1.25rem}
+.alert-summary{
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--bg-danger);border:1px solid rgba(239,95,95,0.35);border-radius:var(--radius);
+  padding:10px 14px;cursor:pointer;font-size:13px;color:var(--text-danger);font-weight:600;
+}
+.alert-summary.clean{background:var(--green-bg);border-color:rgba(62,207,142,0.35);color:var(--green);cursor:default}
+.alert-list{margin-top:8px;display:none}
+.alert-list.open{display:block}
+.alert-item{
+  font-size:12.5px;color:var(--text-secondary);padding:8px 12px;
+  border-bottom:1px solid var(--border-soft);
+}
+.alert-item b{color:var(--text-primary)}
+
+.filter-bar{display:flex;gap:12px;align-items:center;margin-bottom:1rem}
+.filter-bar label{font-size:12px;color:var(--text-secondary)}
+
+.kpi-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  gap:10px;margin-bottom:1.5rem;
+}
+.kpi-card{
+  background:var(--surface-1);border:1px solid var(--border-soft);
+  border-radius:var(--radius-lg);padding:14px 16px;
+}
+.kpi-card .label{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:6px}
+.kpi-card .value{font-size:22px;font-weight:700;letter-spacing:-0.01em}
+.badge{
+  display:inline-block;font-size:10.5px;font-weight:700;padding:2px 7px;
+  border-radius:20px;margin-top:6px;
+}
+.badge.green{background:var(--green-bg);color:var(--green)}
+.badge.yellow{background:var(--yellow-bg);color:var(--yellow)}
+.badge.red{background:var(--red-bg);color:var(--red)}
+.badge.neutral{background:var(--surface-2);color:var(--text-secondary)}
+
+.chart-card{
+  background:var(--surface-1);border:1px solid var(--border-soft);
+  border-radius:var(--radius-lg);padding:18px;margin-bottom:1.25rem;
+}
+.chart-card h3{font-size:13.5px;font-weight:600;margin-bottom:14px;color:var(--text-primary)}
+.chart-wrap{position:relative;width:100%;height:240px}
+
+.loading,.empty{color:var(--text-muted);font-size:13px;padding:2.5rem 0;text-align:center}
+.err{background:var(--bg-danger);border-radius:var(--radius);padding:12px;color:var(--text-danger);font-size:13px;margin-bottom:1rem}
+
+.lb-toggle{display:flex;gap:6px;margin-bottom:1rem}
+.lb-toggle button{
+  padding:6px 14px;border-radius:20px;border:1px solid var(--border-strong);
+  background:var(--surface-2);color:var(--text-secondary);font-size:12.5px;font-weight:600;cursor:pointer;
+}
+.lb-toggle button.active{background:var(--accent);color:#0f1115;border-color:var(--accent)}
+
+.lb-row{
+  display:flex;align-items:center;gap:14px;
+  background:var(--surface-1);border:1px solid var(--border-soft);
+  border-radius:var(--radius);padding:12px 16px;margin-bottom:8px;
+}
+.lb-rank{font-size:15px;font-weight:800;color:var(--text-muted);width:24px}
+.lb-rank.first{color:#ffd15c}
+.lb-rank.second{color:#c8ccd6}
+.lb-rank.third{color:#d99a5c}
+.lb-name{font-weight:700;font-size:14px;flex:0 0 90px}
+.lb-bar-wrap{flex:1;background:var(--surface-2);border-radius:6px;height:22px;overflow:hidden}
+.lb-bar{height:100%;background:linear-gradient(90deg,var(--accent),#a4bdff);border-radius:6px;transition:width .4s}
+.lb-amount{font-weight:700;font-size:13.5px;width:110px;text-align:right}
+.lb-meta{font-size:11px;color:var(--text-muted);width:100px;text-align:right}
+
+@media (max-width:640px){
+  .lb-name{flex-basis:70px;font-size:12.5px}
+  .lb-amount{width:85px;font-size:12px}
+  .lb-meta{display:none}
+}
+</style>
+</head>
+<body>
+<div class="dash">
+  <div class="top-bar">
+    <div>
+      <h1>Closers KPI Dashboard</h1>
+      <div class="sub">MySoulSchool · Vandna · Bhumika · Rahul · Rudrani</div>
+    </div>
+    <select id="dateFilter">
+      <option value="today">Today</option>
+      <option value="yesterday">Yesterday</option>
+      <option value="this_week" selected>This week</option>
+      <option value="last_week">Last week</option>
+      <option value="this_month">This month</option>
+      <option value="last_month">Last month</option>
+      <option value="last_3months">Last 3 months</option>
+      <option value="last_6months">Last 6 months</option>
+      <option value="ytd">Year to date</option>
+    </select>
+  </div>
+
+  <div id="alertBox"></div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="individual">Individual</button>
+    <button class="tab" data-tab="team">Team</button>
+    <button class="tab" data-tab="leaderboard">Leaderboard</button>
+  </div>
+
+  <div id="individual" class="section active">
+    <div class="filter-bar">
+      <label for="closerSelect">Closer</label>
+      <select id="closerSelect"></select>
+    </div>
+    <div id="indKpis" class="kpi-grid"></div>
+    <div class="chart-card">
+      <h3>Connected Ratio &amp; Conversion % trend</h3>
+      <div class="chart-wrap"><canvas id="indChart"></canvas></div>
+    </div>
+  </div>
+
+  <div id="team" class="section">
+    <div id="teamKpis" class="kpi-grid"></div>
+    <div class="chart-card">
+      <h3>Connected Ratio by closer</h3>
+      <div class="chart-wrap"><canvas id="teamChart1"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h3>Booking Amount by closer</h3>
+      <div class="chart-wrap"><canvas id="teamChart2"></canvas></div>
+    </div>
+  </div>
+
+  <div id="leaderboard" class="section">
+    <div class="lb-toggle">
+      <button data-period="week" class="active">This week</button>
+      <button data-period="month">This month</button>
+    </div>
+    <div id="lbList"></div>
+  </div>
+</div>
+
+<script>
+// ============ CONFIG ============
+// Replace with your deployed Apps Script Web App URL (ends in /exec)
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzFr0LnKQ-Q4JEoaHY3KMNTh-8ce-NfwPdMcGeXizYbcvsy0gioQkwgL84evFqzykmp/exec";
+
+const CLOSERS = ["Vandna", "Bhumika", "Rahul", "Rudrani"];
+const BENCHMARKS = {
+  connectedRatio: { green: 60, yellow: 55 },   // >= green, else >= yellow, else red
+  conversionRate: { green: 2, yellow: 1.5 },
+  qualityScore:   { green: 4, yellow: 3 }
+};
+
+let RAW = {};       // { closerName: [ {date, qualityScore, leadsAssigned, callsAttempted, connected, totalTalkTime, convertedSalesCount, bookingAmount}, ... ] }
+let indChart, teamChart1, teamChart2;
+
+// ============ INIT ============
+async function init() {
+  populateCloserSelect();
+  wireTabs();
+  wireLeaderboardToggle();
+  document.getElementById('dateFilter').addEventListener('change', renderAll);
+
+  try {
+    const res = await fetch(APPS_SCRIPT_URL);
+    if (!res.ok) throw new Error('Network response was not ok');
+    RAW = await res.json();
+    renderAll();
+  } catch (err) {
+    document.getElementById('alertBox').innerHTML =
+      `<div class="err">Couldn't load data. Check the Apps Script URL is deployed and set in the dashboard config. (${err.message})</div>`;
+  }
+}
+
+function populateCloserSelect() {
+  const sel = document.getElementById('closerSelect');
+  sel.innerHTML = CLOSERS.map(c => `<option value="${c}">${c}</option>`).join('');
+  sel.addEventListener('change', renderAll);
+}
+
+function wireTabs() {
+  document.querySelectorAll('.tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.tab).classList.add('active');
+    });
+  });
+}
+
+let lbPeriod = 'week';
+function wireLeaderboardToggle() {
+  document.querySelectorAll('.lb-toggle button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.lb-toggle button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      lbPeriod = btn.dataset.period;
+      renderLeaderboard();
+    });
+  });
+}
+
+// ============ DATE RANGE HELPERS ============
+function getDateRange(filter) {
+  const now = new Date();
+  now.setHours(0,0,0,0);
+  const start = new Date(now), end = new Date(now);
+  end.setHours(23,59,59,999);
+
+  const day = now.getDay(); // 0=Sun
+  const mondayOffset = day === 0 ? 6 : day - 1;
+
+  switch (filter) {
+    case 'today': break;
+    case 'yesterday':
+      start.setDate(start.getDate()-1); end.setDate(end.getDate()-1); break;
+    case 'this_week':
+      start.setDate(start.getDate()-mondayOffset); break;
+    case 'last_week':
+      start.setDate(start.getDate()-mondayOffset-7);
+      end.setTime(start.getTime()); end.setDate(end.getDate()+6); end.setHours(23,59,59,999); break;
+    case 'this_month':
+      start.setDate(1); break;
+    case 'last_month':
+      start.setMonth(start.getMonth()-1,1);
+      end.setMonth(end.getMonth(),0); end.setHours(23,59,59,999); break;
+    case 'last_3months':
+      start.setMonth(start.getMonth()-3); break;
+    case 'last_6months':
+      start.setMonth(start.getMonth()-6); break;
+    case 'ytd':
+      start.setMonth(0,1); break;
+  }
+  return { start, end };
+}
+
+function inRange(dateStr, range) {
+  const d = new Date(dateStr + 'T12:00:00');
+  return d >= range.start && d <= range.end;
+}
+
+// ============ AGGREGATION ============
+function aggregate(rows) {
+  const a = {
+    leadsAssigned:0, callsAttempted:0, connected:0, totalTalkTime:0,
+    convertedSalesCount:0, bookingAmount:0, qualitySum:0, qualityCount:0, days:0
+  };
+  rows.forEach(r => {
+    a.leadsAssigned += r.leadsAssigned;
+    a.callsAttempted += r.callsAttempted;
+    a.connected += r.connected;
+    a.totalTalkTime += r.totalTalkTime;
+    a.convertedSalesCount += r.convertedSalesCount;
+    a.bookingAmount += r.bookingAmount;
+    if (r.qualityScore !== null && !isNaN(r.qualityScore)) {
+      a.qualitySum += r.qualityScore; a.qualityCount++;
+    }
+    a.days++;
+  });
+  a.connectedRatio = a.leadsAssigned > 0 ? (a.connected / a.leadsAssigned) * 100 : null;
+  a.conversionRate = a.connected > 0 ? (a.convertedSalesCount / a.connected) * 100 : null;
+  a.avgTalkTime = a.connected > 0 ? a.totalTalkTime / a.connected : null;
+  a.avgQuality = a.qualityCount > 0 ? a.qualitySum / a.qualityCount : null;
+  return a;
+}
+
+function filterRows(closerName, range) {
+  const rows = RAW[closerName] || [];
+  return rows.filter(r => inRange(r.date, range));
+}
+
+// ============ BADGE HELPERS ============
+function badgeFor(kpi, value) {
+  if (value === null || value === undefined) return '<span class="badge neutral">No data</span>';
+  const b = BENCHMARKS[kpi];
+  if (value >= b.green) return '<span class="badge green">On target</span>';
+  if (value >= b.yellow) return '<span class="badge yellow">Watch</span>';
+  return '<span class="badge red">Below target</span>';
+}
+
+function fmtPct(v) { return v === null ? '—' : v.toFixed(1) + '%'; }
+function fmtNum(v) { return v === null ? '—' : v.toFixed(0); }
+function fmtMoney(v) { return '₹' + Math.round(v).toLocaleString('en-IN'); }
+
+// ============ RENDER: MASTER ============
+function renderAll() {
+  if (!Object.keys(RAW).length) return;
+  renderAlerts();
+  renderIndividual();
+  renderTeam();
+  renderLeaderboard();
+}
+
+// ============ RENDER: ALERTS (all-time, not date-filtered) ============
+function renderAlerts() {
+  const issues = [];
+  CLOSERS.forEach(name => {
+    (RAW[name] || []).forEach(r => {
+      if (r.connected > r.leadsAssigned && r.leadsAssigned > 0) {
+        issues.push(`<b>${name}</b> · ${r.date} — Connected (${r.connected}) exceeds Leads Assigned (${r.leadsAssigned})`);
+      }
+      if (r.convertedSalesCount > r.connected && r.connected > 0) {
+        issues.push(`<b>${name}</b> · ${r.date} — Converted Sales (${r.convertedSalesCount}) exceeds Connected (${r.connected})`);
+      }
+      if (r.qualityScore !== null && (r.qualityScore < 1 || r.qualityScore > 5)) {
+        issues.push(`<b>${name}</b> · ${r.date} — Quality Score (${r.qualityScore}) outside valid 1–5 range`);
+      }
+    });
+  });
+
+  const box = document.getElementById('alertBox');
+  if (issues.length === 0) {
+    box.innerHTML = `<div class="alert-summary clean">✓ No data discrepancies found</div>`;
+    return;
+  }
+  box.innerHTML = `
+    <div class="alert-summary" id="alertToggle">⚠ ${issues.length} data discrepanc${issues.length === 1 ? 'y' : 'ies'} found — click to review</div>
+    <div class="alert-list" id="alertList">
+      ${issues.map(i => `<div class="alert-item">${i}</div>`).join('')}
+    </div>`;
+  document.getElementById('alertToggle').addEventListener('click', () => {
+    document.getElementById('alertList').classList.toggle('open');
+  });
+}
+
+// ============ RENDER: INDIVIDUAL ============
+function renderIndividual() {
+  const closer = document.getElementById('closerSelect').value;
+  const range = getDateRange(document.getElementById('dateFilter').value);
+  const rows = filterRows(closer, range);
+  const a = aggregate(rows);
+
+  const kpiEl = document.getElementById('indKpis');
+  if (rows.length === 0) {
+    kpiEl.innerHTML = `<div class="empty">No data for ${closer} in this period</div>`;
+  } else {
+    kpiEl.innerHTML = `
+      <div class="kpi-card"><div class="label">Connected Ratio</div><div class="value">${fmtPct(a.connectedRatio)}</div>${badgeFor('connectedRatio', a.connectedRatio)}</div>
+      <div class="kpi-card"><div class="label">Conversion %</div><div class="value">${fmtPct(a.conversionRate)}</div>${badgeFor('conversionRate', a.conversionRate)}</div>
+      <div class="kpi-card"><div class="label">Quality Score</div><div class="value">${a.avgQuality === null ? '—' : a.avgQuality.toFixed(1)}</div>${badgeFor('qualityScore', a.avgQuality)}</div>
+      <div class="kpi-card"><div class="label">Booking Amount</div><div class="value">${fmtMoney(a.bookingAmount)}</div></div>
+      <div class="kpi-card"><div class="label">Converted Sales</div><div class="value">${a.convertedSalesCount}</div></div>
+      <div class="kpi-card"><div class="label">Avg Talk Time</div><div class="value">${a.avgTalkTime === null ? '—' : a.avgTalkTime.toFixed(1) + 'm'}</div></div>
+    `;
+  }
+
+  // Trend chart — daily connected ratio & conversion % across the filtered range
+  const sorted = [...rows].sort((x,y) => x.date.localeCompare(y.date));
+  const labels = sorted.map(r => r.date.slice(5));
+  const cr = sorted.map(r => r.leadsAssigned > 0 ? +( (r.connected/r.leadsAssigned)*100 ).toFixed(1) : null);
+  const cv = sorted.map(r => r.connected > 0 ? +( (r.convertedSalesCount/r.connected)*100 ).toFixed(1) : null);
+
+  if (indChart) indChart.destroy();
+  indChart = new Chart(document.getElementById('indChart'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Connected Ratio %', data: cr, borderColor: '#7c9eff', backgroundColor: 'rgba(124,158,255,0.1)', tension: 0.3, spanGaps: true },
+        { label: 'Conversion %', data: cv, borderColor: '#3ecf8e', backgroundColor: 'rgba(62,207,142,0.1)', tension: 0.3, spanGaps: true }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: '#a7adbb', font: { size: 11 } } } },
+      scales: {
+        x: { ticks: { color: '#6b7180', font: { size: 10 } }, grid: { color: '#232733' } },
+        y: { ticks: { color: '#6b7180', font: { size: 10 } }, grid: { color: '#232733' } }
+      }
+    }
+  });
+}
+
+// ============ RENDER: TEAM ============
+function renderTeam() {
+  const range = getDateRange(document.getElementById('dateFilter').value);
+  const perCloser = CLOSERS.map(name => ({ name, a: aggregate(filterRows(name, range)) }));
+
+  const totalLeads = perCloser.reduce((s,c)=>s+c.a.leadsAssigned,0);
+  const totalConnected = perCloser.reduce((s,c)=>s+c.a.connected,0);
+  const totalConverted = perCloser.reduce((s,c)=>s+c.a.convertedSalesCount,0);
+  const totalBooking = perCloser.reduce((s,c)=>s+c.a.bookingAmount,0);
+  const teamConnectedRatio = totalLeads > 0 ? (totalConnected/totalLeads)*100 : null;
+  const teamConversion = totalConnected > 0 ? (totalConverted/totalConnected)*100 : null;
+  const qualityVals = perCloser.map(c=>c.a.avgQuality).filter(v=>v!==null);
+  const teamQuality = qualityVals.length ? qualityVals.reduce((s,v)=>s+v,0)/qualityVals.length : null;
+
+  document.getElementById('teamKpis').innerHTML = `
+    <div class="kpi-card"><div class="label">Team Connected Ratio</div><div class="value">${fmtPct(teamConnectedRatio)}</div>${badgeFor('connectedRatio', teamConnectedRatio)}</div>
+    <div class="kpi-card"><div class="label">Team Conversion %</div><div class="value">${fmtPct(teamConversion)}</div>${badgeFor('conversionRate', teamConversion)}</div>
+    <div class="kpi-card"><div class="label">Team Quality Score</div><div class="value">${teamQuality===null?'—':teamQuality.toFixed(1)}</div>${badgeFor('qualityScore', teamQuality)}</div>
+    <div class="kpi-card"><div class="label">Total Booking Amount</div><div class="value">${fmtMoney(totalBooking)}</div></div>
+  `;
+
+  const labels = perCloser.map(c => c.name);
+  const crData = perCloser.map(c => c.a.connectedRatio === null ? 0 : +c.a.connectedRatio.toFixed(1));
+  const bookingData = perCloser.map(c => c.a.bookingAmount);
+
+  if (teamChart1) teamChart1.destroy();
+  teamChart1 = new Chart(document.getElementById('teamChart1'), {
+    type: 'bar',
+    data: { labels, datasets: [{ label: 'Connected Ratio %', data: crData, backgroundColor: '#7c9eff', borderRadius: 6 }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#a7adbb', font: { size: 11 } }, grid: { display: false } },
+        y: { ticks: { color: '#6b7180', font: { size: 10 } }, grid: { color: '#232733' } }
+      }
+    }
+  });
+
+  if (teamChart2) teamChart2.destroy();
+  teamChart2 = new Chart(document.getElementById('teamChart2'), {
+    type: 'bar',
+    data: { labels, datasets: [{ label: 'Booking Amount', data: bookingData, backgroundColor: '#3ecf8e', borderRadius: 6 }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#a7adbb', font: { size: 11 } }, grid: { display: false } },
+        y: { ticks: { color: '#6b7180', font: { size: 10 }, callback: v => '₹' + v.toLocaleString('en-IN') }, grid: { color: '#232733' } }
+      }
+    }
+  });
+}
+
+// ============ RENDER: LEADERBOARD ============
+function renderLeaderboard() {
+  const range = getDateRange(lbPeriod === 'week' ? 'this_week' : 'this_month');
+  const ranked = CLOSERS.map(name => {
+    const a = aggregate(filterRows(name, range));
+    return { name, bookingAmount: a.bookingAmount, convertedSalesCount: a.convertedSalesCount };
+  }).sort((x,y) => y.bookingAmount - x.bookingAmount);
+
+  const max = Math.max(1, ...ranked.map(r => r.bookingAmount));
+  const rankClass = ['first','second','third'];
+
+  document.getElementById('lbList').innerHTML = ranked.map((r,i) => `
+    <div class="lb-row">
+      <div class="lb-rank ${rankClass[i]||''}">${i+1}</div>
+      <div class="lb-name">${r.name}</div>
+      <div class="lb-bar-wrap"><div class="lb-bar" style="width:${(r.bookingAmount/max*100).toFixed(0)}%"></div></div>
+      <div class="lb-amount">${fmtMoney(r.bookingAmount)}</div>
+      <div class="lb-meta">${r.convertedSalesCount} sales</div>
+    </div>
+  `).join('');
+}
+
+init();
+</script>
+</body>
+</html>
