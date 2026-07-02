@@ -9,75 +9,49 @@
     --purple-1:#4b2e6f; --purple-2:#7a4fa3;
     --ink:#1f1730; --ink-soft:#6b6478;
     --bg:#f7f5fa; --card:#ffffff; --line:#e8e3f0;
-    --green:#1c8a5a; --green-bg:#e7f6ee;
-    --red:#c23b3b; --red-bg:#fbeaea;
+    --green:#1c8a5a; --red:#c23b3b;
     --amber:#b8790f; --amber-bg:#fdf3e2;
     --radius:14px;
   }
   *{box-sizing:border-box;}
-  body{
-    margin:0; font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
-    background:var(--bg); color:var(--ink);
-  }
+  body{margin:0; font-family:'Segoe UI',system-ui,-apple-system,sans-serif; background:var(--bg); color:var(--ink);}
   .wrap{max-width:980px; margin:0 auto; padding:0 20px 60px;}
-  header.hero{
-    background:linear-gradient(120deg,var(--purple-1),var(--purple-2));
-    color:#fff; padding:32px 20px; margin-bottom:24px;
-  }
+  header.hero{background:linear-gradient(120deg,var(--purple-1),var(--purple-2)); color:#fff; padding:32px 20px; margin-bottom:24px;}
   header.hero .inner{max-width:980px; margin:0 auto;}
   header.hero h1{margin:0 0 6px; font-size:26px; font-weight:700;}
   header.hero .sub{opacity:.85; font-size:14px;}
 
   .controls{
     background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
-    padding:16px 20px; display:flex; flex-wrap:wrap; align-items:flex-end; gap:14px;
-    margin-bottom:18px;
+    padding:16px 20px; display:flex; flex-wrap:wrap; align-items:center; gap:14px; margin-bottom:18px;
   }
-  .field{display:flex; flex-direction:column; gap:4px;}
-  .field label{font-size:11px; letter-spacing:.04em; text-transform:uppercase; color:var(--ink-soft); font-weight:600;}
-  .field input[type=date]{
-    padding:8px 10px; border:1px solid var(--line); border-radius:8px; font-size:14px; color:var(--ink);
-  }
-  button{
-    font-family:inherit; font-size:14px; font-weight:600; cursor:pointer; border-radius:8px; border:1px solid var(--line);
-    padding:9px 16px; background:#fff; color:var(--ink);
-  }
+  button{font-family:inherit; font-size:14px; font-weight:600; cursor:pointer; border-radius:8px; border:1px solid var(--line); padding:9px 16px; background:#fff; color:var(--ink);}
   button.primary{background:var(--purple-1); color:#fff; border-color:var(--purple-1);}
   button.quiet{background:var(--bg);}
+  button.active{background:var(--purple-1); color:#fff; border-color:var(--purple-1);}
   .status-row{display:flex; align-items:center; gap:8px; margin-left:auto; font-size:13px; color:var(--ink-soft);}
   .dot{width:8px; height:8px; border-radius:50%; background:var(--green); display:inline-block;}
   .dot.err{background:var(--red);}
 
-  .summary{
-    display:flex; gap:24px; flex-wrap:wrap; background:var(--card); border:1px solid var(--line);
-    border-radius:var(--radius); padding:16px 20px; margin-bottom:18px; font-size:14px;
-  }
+  .tabs{display:flex; gap:8px; margin-bottom:18px;}
+  .tabs button{padding:9px 20px;}
+
+  .summary{display:flex; gap:24px; flex-wrap:wrap; background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:16px 20px; margin-bottom:18px; font-size:14px;}
   .summary b{font-size:17px;}
 
-  .alert{
-    border-radius:var(--radius); padding:14px 18px; margin-bottom:14px; font-size:14px; border:1px solid;
-  }
-  .alert.red{background:var(--red-bg); border-color:#f0c6c6; color:#7a2323;}
+  .alert{border-radius:var(--radius); padding:14px 18px; margin-bottom:14px; font-size:14px; border:1px solid;}
   .alert.amber{background:var(--amber-bg); border-color:#efd7a3; color:#7a5209;}
   .alert summary{cursor:pointer; font-weight:600;}
   .alert ul{margin:8px 0 0; padding-left:18px;}
   .alert li{margin-bottom:3px;}
 
-  .list-head{
-    display:grid; grid-template-columns: 1.6fr .8fr .8fr 1.4fr; gap:10px;
-    padding:0 20px; font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-soft);
-    margin-bottom:6px;
-  }
-  .row{
-    background:var(--card); border:1px solid var(--line); border-radius:12px; margin-bottom:8px; overflow:hidden;
-  }
-  .row-main{
-    display:grid; grid-template-columns: 1.6fr .8fr .8fr 1.4fr; gap:10px; align-items:center;
-    padding:14px 20px; cursor:pointer;
-  }
-  .row-main:hover{background:#fbfaff;}
+  .list-head{display:grid; grid-template-columns: 1.6fr .8fr .8fr 1.4fr; gap:10px; padding:0 20px; font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-soft); margin-bottom:6px;}
+  .row{background:var(--card); border:1px solid var(--line); border-radius:12px; margin-bottom:8px; overflow:hidden;}
+  .row-main{display:grid; grid-template-columns: 1.6fr .8fr .8fr 1.4fr; gap:10px; align-items:center; padding:14px 20px;}
+  .row-main.clickable{cursor:pointer;}
+  .row-main.clickable:hover{background:#fbfaff;}
   .name{font-weight:600; font-size:15px;}
-  .name .fraction{font-size:12px; color:var(--ink-soft); font-weight:400; margin-left:8px;}
+  .name .tag{font-size:12px; color:var(--ink-soft); font-weight:400; margin-left:8px;}
   .pct{font-weight:700; font-size:15px;}
   .pct.green{color:var(--green);}
   .pct.red{color:var(--red);}
@@ -87,21 +61,14 @@
   .bar.red > span{background:var(--red);}
   .counts{display:flex; gap:10px; font-size:12px; color:var(--ink-soft); flex-wrap:wrap;}
   .counts b{color:var(--ink); font-weight:600;}
-  .caret{font-size:12px; color:var(--ink-soft); justify-self:end;}
 
   .breakdown{display:none; border-top:1px solid var(--line); background:#fbfaff; padding:6px 20px 14px;}
   .breakdown.open{display:block;}
-  .prog-row{
-    display:grid; grid-template-columns: 1.6fr .8fr .8fr 1.4fr; gap:10px; align-items:center;
-    padding:9px 0; font-size:13px; border-bottom:1px dashed var(--line);
-  }
+  .prog-row{display:grid; grid-template-columns: 1.6fr .8fr .8fr 1.4fr; gap:10px; align-items:center; padding:9px 0; font-size:13px; border-bottom:1px dashed var(--line);}
   .prog-row:last-child{border-bottom:none;}
   .prog-name{color:var(--ink-soft);}
   .empty{padding:40px 20px; text-align:center; color:var(--ink-soft);}
-  .tmr-note{
-    background:var(--card); border:1px dashed var(--line); border-radius:12px; padding:14px 20px;
-    color:var(--ink-soft); font-size:13px; margin-bottom:14px;
-  }
+  .quarterly-note{font-size:11px; color:var(--ink-soft); font-style:italic;}
 </style>
 </head>
 <body>
@@ -116,16 +83,7 @@
 <div class="wrap">
 
   <div class="controls">
-    <div class="field">
-      <label>From</label>
-      <input type="date" id="fromDate">
-    </div>
-    <div class="field">
-      <label>To</label>
-      <input type="date" id="toDate">
-    </div>
-    <button class="quiet" id="todayBtn">Today</button>
-    <button class="quiet" id="last7Btn">Last 7 days</button>
+    <button class="quiet active" id="todayBtn">Today</button>
     <button class="quiet" id="lastWeekBtn">Last week</button>
     <button class="primary" id="refreshBtn">Refresh</button>
     <div class="status-row">
@@ -134,53 +92,65 @@
     </div>
   </div>
 
+  <div class="tabs">
+    <button class="active" id="teamTabBtn">Team</button>
+    <button id="individualTabBtn">Individual</button>
+  </div>
+
   <div id="alertsArea"></div>
 
   <div class="summary" id="summaryBar">Loading summary…</div>
 
-  <div class="list-head">
-    <div>Intern</div>
-    <div>Done</div>
-    <div>On Time</div>
-    <div>Connected / DNP / Call Later</div>
+  <div id="teamView">
+    <div class="list-head">
+      <div>Program</div><div>Done</div><div>On Time</div><div>Connected / DNP / Call Later</div>
+    </div>
+    <div id="teamListArea"><div class="empty">Loading…</div></div>
   </div>
 
-  <div id="listArea"><div class="empty">Loading…</div></div>
+  <div id="individualView" style="display:none;">
+    <div class="list-head">
+      <div>Intern</div><div>Done</div><div>On Time</div><div>Connected / DNP / Call Later</div>
+    </div>
+    <div id="individualListArea"><div class="empty">Loading…</div></div>
+  </div>
 
 </div>
 
 <script>
-  // ---- CONFIGURE THIS: paste your Apps Script /exec URL here ----
-  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxBEcvV12Cr0pUvDxa3q6_VEYtZenli80L3Yoxsubqkg1waS-OG8XIhEMFg2IysUFk/exec';
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzO9mKH8l5cqVvnryg5mKfm6Ndg_d2EyeDiA83agprtTk5IGCzykLN5YMEMJruzXQs/exec';
 
   const PROGRAM_ORDER = ['UTW Invitation','Day 1 Attendees','Day 2 Attendees','Reiki Invitation Calls FMS','TMR'];
 
-  const fromInput = document.getElementById('fromDate');
-  const toInput = document.getElementById('toDate');
+  const fromDateHolder = { value: null };
+  const toDateHolder = { value: null };
   const statusDot = document.getElementById('statusDot');
   const statusText = document.getElementById('statusText');
   const rangeLabel = document.getElementById('rangeLabel');
   const summaryBar = document.getElementById('summaryBar');
-  const listArea = document.getElementById('listArea');
   const alertsArea = document.getElementById('alertsArea');
+  const teamListArea = document.getElementById('teamListArea');
+  const individualListArea = document.getElementById('individualListArea');
+  const todayBtn = document.getElementById('todayBtn');
+  const lastWeekBtn = document.getElementById('lastWeekBtn');
+  const teamTabBtn = document.getElementById('teamTabBtn');
+  const individualTabBtn = document.getElementById('individualTabBtn');
+  const teamView = document.getElementById('teamView');
+  const individualView = document.getElementById('individualView');
 
   function fmt(d){ return d.toISOString().slice(0,10); }
-  function setDefaultRange(){
-    const to = new Date();
-    const from = new Date();
-    from.setDate(from.getDate() - 7);
-    fromInput.value = fmt(from);
-    toInput.value = fmt(to);
-  }
+
   function setToday(){
     const t = new Date();
-    fromInput.value = fmt(t);
-    toInput.value = fmt(t);
+    fromDateHolder.value = fmt(t);
+    toDateHolder.value = fmt(t);
+    todayBtn.classList.add('active');
+    lastWeekBtn.classList.remove('active');
   }
   function getMonday(d){
     const date = new Date(d);
-    const day = date.getDay(); // 0=Sun..6=Sat
-    const diff = (day === 0 ? -6 : 1) - day; // shift back to Monday
+    const day = date.getDay();
+    const diff = (day === 0 ? -6 : 1) - day;
     date.setDate(date.getDate() + diff);
     date.setHours(0,0,0,0);
     return date;
@@ -189,48 +159,56 @@
     const thisMonday = getMonday(new Date());
     const lastMonday = new Date(thisMonday); lastMonday.setDate(lastMonday.getDate() - 7);
     const lastSunday = new Date(thisMonday); lastSunday.setDate(lastSunday.getDate() - 1);
-    fromInput.value = fmt(lastMonday);
-    toInput.value = fmt(lastSunday);
+    fromDateHolder.value = fmt(lastMonday);
+    toDateHolder.value = fmt(lastSunday);
+    lastWeekBtn.classList.add('active');
+    todayBtn.classList.remove('active');
   }
   function displayDate(iso){
-    const d = new Date(iso);
-    return d.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+    return new Date(iso).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+  }
+  function pctClass(p){ return (p === null || p === undefined) ? '' : (p >= 90 ? 'green' : 'red'); }
+
+  function showTab(tab){
+    if (tab === 'team'){
+      teamView.style.display = '';
+      individualView.style.display = 'none';
+      teamTabBtn.classList.add('active');
+      individualTabBtn.classList.remove('active');
+    } else {
+      teamView.style.display = 'none';
+      individualView.style.display = '';
+      individualTabBtn.classList.add('active');
+      teamTabBtn.classList.remove('active');
+    }
   }
 
   async function loadData(){
     statusDot.className = 'dot';
     statusText.textContent = 'Loading…';
-    listArea.innerHTML = '<div class="empty">Loading…</div>';
+    teamListArea.innerHTML = '<div class="empty">Loading…</div>';
+    individualListArea.innerHTML = '<div class="empty">Loading…</div>';
     alertsArea.innerHTML = '';
 
-    if (!SCRIPT_URL || SCRIPT_URL.indexOf('PASTE_') === 0){
-      statusDot.className = 'dot err';
-      statusText.textContent = 'Not connected';
-      listArea.innerHTML = '<div class="empty">Set SCRIPT_URL in the code to your Apps Script /exec URL.</div>';
-      return;
-    }
-
-    const start = fromInput.value, end = toInput.value;
+    const start = fromDateHolder.value, end = toDateHolder.value;
     try{
       const res = await fetch(`${SCRIPT_URL}?start=${start}&end=${end}`);
       const data = await res.json();
-      if (data.error){ throw new Error(data.error); }
+      if (data.error) throw new Error(data.error);
       render(data);
       statusDot.className = 'dot';
       statusText.textContent = 'Live — data is current';
     }catch(err){
       statusDot.className = 'dot err';
       statusText.textContent = 'Error loading data';
-      listArea.innerHTML = `<div class="empty">Could not load data: ${err.message}</div>`;
+      teamListArea.innerHTML = `<div class="empty">Could not load data: ${err.message}</div>`;
+      individualListArea.innerHTML = '';
     }
   }
-
-  function pctClass(p){ return (p === null || p === undefined) ? '' : (p >= 90 ? 'green' : 'red'); }
 
   function render(data){
     rangeLabel.textContent = `${displayDate(data.range.start)} – ${displayDate(data.range.end)}`;
 
-    // Summary bar
     const totalDoers = data.doers.length;
     const totalPlanned = data.doers.reduce((s,d)=>s+d.combined.planned,0);
     const totalActual = data.doers.reduce((s,d)=>s+d.combined.actual,0);
@@ -241,34 +219,61 @@
       <div>Overall done <b>${overallDone}%</b></div>
     `;
 
-    // Alerts
     let alertsHtml = '';
-    if (data.missingDoers && data.missingDoers.length){
-      alertsHtml += `<div class="alert red"><details><summary>⚠ ${data.missingDoers.length} intern(s) with no data in this range</summary>
-        <ul>${data.missingDoers.map(m=>`<li><b>${m.name}</b> — normally active in: ${m.historicalPrograms.join(', ')}</li>`).join('')}</ul>
-      </details></div>`;
-    }
     if (data.dataIssues && data.dataIssues.length){
-      alertsHtml += `<div class="alert amber"><details><summary>⚠ ${data.dataIssues.length} data issue(s) found</summary>
-        <ul>${data.dataIssues.slice(0,50).map(i=>`<li>${i.program} / ${i.block} (row ${i.row}) — ${i.issue}${i.doer && i.doer !== '(blank)' ? ' — ' + i.doer : ''}</li>`).join('')}
+      alertsHtml += `<div class="alert amber"><details><summary>⚠ ${data.dataIssues.length} data issue(s) in this range</summary>
+        <ul>${data.dataIssues.slice(0,50).map(i=>`<li>${i.program} (row ${i.row}) — ${i.issue}${i.doer && i.doer !== '(blank)' ? ' — ' + i.doer : ''}</li>`).join('')}
         ${data.dataIssues.length>50 ? `<li>…and ${data.dataIssues.length-50} more</li>` : ''}</ul>
       </details></div>`;
     }
-    if (!data.tmr.hasData){
-      alertsHtml += `<div class="tmr-note">TMR — no data in this range. Expected between quarterly webinar cycles.</div>`;
-    }
     alertsArea.innerHTML = alertsHtml;
 
-    // List
+    // ---- Team tab: program-level totals, no names ----
+    teamListArea.innerHTML = data.programs.map(p => {
+      const m = p.metrics;
+      const noData = m.planned === 0;
+      if (noData){
+        return `
+          <div class="row">
+            <div class="row-main">
+              <div class="name">${p.name}</div>
+              <div colspan="3" class="empty" style="padding:0; text-align:left;">
+                ${p.isQuarterly ? '<span class="quarterly-note">No data — expected between quarterly cycles</span>' : 'No data in this range'}
+              </div>
+            </div>
+          </div>`;
+      }
+      const donePct = m.donePct ?? 0, otPct = m.onTimePct ?? 0;
+      return `
+        <div class="row">
+          <div class="row-main">
+            <div class="name">${p.name}</div>
+            <div>
+              <div class="pct ${pctClass(m.donePct)}">${donePct}%<span class="frac">${m.actual}/${m.planned}</span></div>
+              <div class="bar ${pctClass(m.donePct)==='red'?'red':''}"><span style="width:${donePct}%"></span></div>
+            </div>
+            <div>
+              <div class="pct ${pctClass(m.onTimePct)}">${m.onTimePct ?? '—'}${m.onTimePct!==null?'%':''}<span class="frac">${m.onTime}/${m.actual}</span></div>
+              <div class="bar ${pctClass(m.onTimePct)==='red'?'red':''}"><span style="width:${otPct}%"></span></div>
+            </div>
+            <div class="counts">
+              <span><b>${m.connected}</b> Connected</span>
+              <span><b>${m.dnp}</b> DNP</span>
+              <span><b>${m.callLater}</b> Call Later</span>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+
+    // ---- Individual tab: per-person, alphabetical, expandable per-program breakdown ----
     if (!data.doers.length){
-      listArea.innerHTML = '<div class="empty">No activity in this date range.</div>';
+      individualListArea.innerHTML = '<div class="empty">No activity in this date range.</div>';
       return;
     }
 
-    listArea.innerHTML = data.doers.map((d, idx) => {
+    individualListArea.innerHTML = data.doers.map((d, idx) => {
       const c = d.combined;
-      const donePct = c.donePct ?? 0;
-      const otPct = c.onTimePct ?? 0;
+      const donePct = c.donePct ?? 0, otPct = c.onTimePct ?? 0;
       const progsPresent = PROGRAM_ORDER.filter(p => d.programs[p]);
 
       const breakdownRows = progsPresent.map(p => {
@@ -284,8 +289,8 @@
 
       return `
         <div class="row">
-          <div class="row-main" onclick="document.getElementById('bd-${idx}').classList.toggle('open')">
-            <div class="name">${d.name}<span class="fraction">${progsPresent.length} program${progsPresent.length!==1?'s':''}</span></div>
+          <div class="row-main clickable" onclick="document.getElementById('bd-${idx}').classList.toggle('open')">
+            <div class="name">${d.name}<span class="tag">${progsPresent.length} program${progsPresent.length!==1?'s':''}</span></div>
             <div>
               <div class="pct ${pctClass(c.donePct)}">${donePct}%<span class="frac">${c.actual}/${c.planned}</span></div>
               <div class="bar ${pctClass(c.donePct)==='red'?'red':''}"><span style="width:${donePct}%"></span></div>
@@ -305,12 +310,13 @@
     }).join('');
   }
 
-  document.getElementById('todayBtn').onclick = () => { setToday(); loadData(); };
-  document.getElementById('last7Btn').onclick = () => { setDefaultRange(); loadData(); };
-  document.getElementById('lastWeekBtn').onclick = () => { setLastWeek(); loadData(); };
+  todayBtn.onclick = () => { setToday(); loadData(); };
+  lastWeekBtn.onclick = () => { setLastWeek(); loadData(); };
   document.getElementById('refreshBtn').onclick = loadData;
+  teamTabBtn.onclick = () => showTab('team');
+  individualTabBtn.onclick = () => showTab('individual');
 
-  setDefaultRange();
+  setToday();
   loadData();
 </script>
 
