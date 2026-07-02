@@ -26,6 +26,9 @@
     padding:16px 20px; display:flex; flex-wrap:wrap; align-items:center; gap:14px; margin-bottom:18px;
   }
   button{font-family:inherit; font-size:14px; font-weight:600; cursor:pointer; border-radius:8px; border:1px solid var(--line); padding:9px 16px; background:#fff; color:var(--ink);}
+  .field{display:flex; flex-direction:column; gap:4px;}
+  .field label{font-size:11px; letter-spacing:.04em; text-transform:uppercase; color:var(--ink-soft); font-weight:600;}
+  .field input[type=date]{padding:8px 10px; border:1px solid var(--line); border-radius:8px; font-size:14px; color:var(--ink);}
   button.primary{background:var(--purple-1); color:#fff; border-color:var(--purple-1);}
   button.quiet{background:var(--bg);}
   button.active{background:var(--purple-1); color:#fff; border-color:var(--purple-1);}
@@ -83,6 +86,14 @@
 <div class="wrap">
 
   <div class="controls">
+    <div class="field">
+      <label>From</label>
+      <input type="date" id="fromDate">
+    </div>
+    <div class="field">
+      <label>To</label>
+      <input type="date" id="toDate">
+    </div>
     <button class="quiet active" id="todayBtn">Today</button>
     <button class="quiet" id="lastWeekBtn">Last week</button>
     <button class="primary" id="refreshBtn">Refresh</button>
@@ -118,12 +129,12 @@
 </div>
 
 <script>
-  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzO9mKH8l5cqVvnryg5mKfm6Ndg_d2EyeDiA83agprtTk5IGCzykLN5YMEMJruzXQs/exec';
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzF3xXsvcJOLWi0p9ewTcTUSRf2bwFitEtkMXfj2EBoCVvDrh7cQyOGOryr1Smoow/exec';
 
   const PROGRAM_ORDER = ['UTW Invitation','Day 1 Attendees','Day 2 Attendees','Reiki Invitation Calls FMS','TMR'];
 
-  const fromDateHolder = { value: null };
-  const toDateHolder = { value: null };
+  const fromDateHolder = document.getElementById('fromDate');
+  const toDateHolder = document.getElementById('toDate');
   const statusDot = document.getElementById('statusDot');
   const statusText = document.getElementById('statusText');
   const rangeLabel = document.getElementById('rangeLabel');
@@ -253,7 +264,7 @@
               <div class="bar ${pctClass(m.donePct)==='red'?'red':''}"><span style="width:${donePct}%"></span></div>
             </div>
             <div>
-              <div class="pct ${pctClass(m.onTimePct)}">${m.onTimePct ?? '—'}${m.onTimePct!==null?'%':''}<span class="frac">${m.onTime}/${m.actual}</span></div>
+              <div class="pct ${pctClass(m.onTimePct)}">${m.onTimePct ?? '—'}${m.onTimePct!==null?'%':''}<span class="frac">${m.onTime}/${m.planned}</span></div>
               <div class="bar ${pctClass(m.onTimePct)==='red'?'red':''}"><span style="width:${otPct}%"></span></div>
             </div>
             <div class="counts">
@@ -282,7 +293,7 @@
           <div class="prog-row">
             <div class="prog-name">${p}</div>
             <div class="pct ${pctClass(m.donePct)}">${m.donePct ?? '—'}${m.donePct!==null?'%':''} <span class="frac">${m.actual}/${m.planned}</span></div>
-            <div class="pct ${pctClass(m.onTimePct)}">${m.onTimePct ?? '—'}${m.onTimePct!==null?'%':''} <span class="frac">${m.onTime}/${m.actual}</span></div>
+            <div class="pct ${pctClass(m.onTimePct)}">${m.onTimePct ?? '—'}${m.onTimePct!==null?'%':''} <span class="frac">${m.onTime}/${m.planned}</span></div>
             <div class="counts"><span><b>${m.connected}</b> Conn</span><span><b>${m.dnp}</b> DNP</span><span><b>${m.callLater}</b> CL</span></div>
           </div>`;
       }).join('');
@@ -296,7 +307,7 @@
               <div class="bar ${pctClass(c.donePct)==='red'?'red':''}"><span style="width:${donePct}%"></span></div>
             </div>
             <div>
-              <div class="pct ${pctClass(c.onTimePct)}">${c.onTimePct ?? '—'}${c.onTimePct!==null?'%':''}<span class="frac">${c.onTime}/${c.actual}</span></div>
+              <div class="pct ${pctClass(c.onTimePct)}">${c.onTimePct ?? '—'}${c.onTimePct!==null?'%':''}<span class="frac">${c.onTime}/${c.planned}</span></div>
               <div class="bar ${pctClass(c.onTimePct)==='red'?'red':''}"><span style="width:${otPct}%"></span></div>
             </div>
             <div class="counts">
@@ -315,6 +326,12 @@
   document.getElementById('refreshBtn').onclick = loadData;
   teamTabBtn.onclick = () => showTab('team');
   individualTabBtn.onclick = () => showTab('individual');
+  [fromDateHolder, toDateHolder].forEach(input => {
+    input.addEventListener('change', () => {
+      todayBtn.classList.remove('active');
+      lastWeekBtn.classList.remove('active');
+    });
+  });
 
   setToday();
   loadData();
