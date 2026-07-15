@@ -200,6 +200,10 @@ select{
 // Replace with your deployed Apps Script Web App URL (ends in /exec)
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyse1cWGQYlQXVT13_GxgaN_QPa0jEzQuBg5XAoj2JhH2hDWaewcGZb8j6icFgjopmn/exec";
 
+// Separate deployment for MIS scores — different sheet, different script,
+// on purpose. Replace with the /exec URL once MIS_Scores.gs is deployed.
+const MIS_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwUxUywO53qBIpSM53UDfldZueuYZsUTLUwdXbbQ8T2RRf7jGvyHQuP_QWavAtVU1gq/exec";
+
 let CLOSERS = []; // populated from API response after load
 const BENCHMARKS = {
   connectedRatio: { green: 60, yellow: 55 },   // >= green, else >= yellow, else red
@@ -207,7 +211,13 @@ const BENCHMARKS = {
   qualityScore:   { green: 4, yellow: 3 }
 };
 
+// MIS values are shortfall percentages (e.g. -20 means 20% below plan).
+// Less negative (closer to 0) is better.
+const MIS_BENCHMARK = { green: -10, yellow: -25 }; // >= green, else >= yellow, else red
+
 let RAW = {};       // { closerName: [ {date, qualityScore, leadsAssigned, callsAttempted, connected, totalTalkTime, convertedSalesCount, bookingAmount}, ... ] }
+let MIS = {};        // { closerName: { workDonePct, onTimePct } } — populated separately, may stay {} if MIS fetch fails
+let misWeekLabel = '';
 let indChart, teamChart1, teamChart2;
 
 // ============ INIT ============
@@ -228,6 +238,28 @@ async function init() {
     document.getElementById('alertBox').innerHTML =
       `<div class="err">Couldn't load data. Check the Apps Script URL is deployed and set in the dashboard config. (${err.message})</div>`;
   }
+
+  // MIS fetch is completely separate and isolated: if this fails, times out,
+  // or the sheet structure changes, the rest of the dashboard above is
+  // unaffected — cards just show "MIS data unavailable" for those fields.
+  loadMisScores();
+}
+
+async function loadMisScores() {
+  try {
+    const res = await fetch(MIS_APPS_SCRIPT_URL);
+    if (!res.ok) throw new Error('MIS network response was not ok');
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    MIS = data.closers || {};
+    misWeekLabel = data.weekLabel || '';
+  } catch (err) {
+    MIS = {}; // fall back silently — individual cards will show "MIS data unavailable"
+    misWeekLabel = '';
+  }
+  // Re-render just the individual view if it's already loaded, so MIS cards appear
+  // without waiting for the next filter change.
+  if (Object.keys(RAW).length) renderIndividual();
 }
 
 function populateCloserSelect() {
@@ -337,6 +369,15 @@ function badgeFor(kpi, value) {
   return '<span class="badge red">Below target</span>';
 }
 
+function misBadgeFor(value) {
+  if (value === null || value === undefined) return '<span class="badge neutral">No data</span>';
+  if (value >= MIS_BENCHMARK.green) return '<span class="badge green">On target</span>';
+  if (value >= MIS_BENCHMARK.yellow) return '<span class="badge yellow">Watch</span>';
+  return '<span class="badge red">Below target</span>';
+}
+
+function fmtMisPct(v) { return (v === null || v === undefined) ? '—' : (v > 0 ? '+' : '') + v.toFixed(1) + '%'; }
+
 function fmtPct(v) { return v === null ? '—' : v.toFixed(1) + '%'; }
 function fmtNum(v) { return v === null ? '—' : v.toFixed(0); }
 function fmtMoney(v) { return '₹' + Math.round(v).toLocaleString('en-IN'); }
@@ -382,6 +423,24 @@ function renderAlerts() {
   });
 }
 
+// ============ RENDER: MIS SCORES (own section, isolated from RAW data) ============
+function misCardsHtml(closer) {
+  const m = MIS[closer];
+  const weekNote = misWeekLabel ? `<div class="label" style="margin-top:2px;text-transform:none;letter-spacing:0">Week: ${misWeekLabel}</div>` : '';
+
+  if (!m) {
+    return `
+      <div class="kpi-card"><div class="label">Work Done (MIS)</div><div class="value" style="font-size:14px;color:var(--text-muted)">MIS data unavailable</div></div>
+      <div class="kpi-card"><div class="label">On Time (MIS)</div><div class="value" style="font-size:14px;color:var(--text-muted)">MIS data unavailable</div></div>
+    `;
+  }
+
+  return `
+    <div class="kpi-card"><div class="label">Work Done (MIS)</div><div class="value">${fmtMisPct(m.workDonePct)}</div>${misBadgeFor(m.workDonePct)}${weekNote}</div>
+    <div class="kpi-card"><div class="label">On Time (MIS)</div><div class="value">${fmtMisPct(m.onTimePct)}</div>${misBadgeFor(m.onTimePct)}</div>
+  `;
+}
+
 // ============ RENDER: INDIVIDUAL ============
 function renderIndividual() {
   const closer = document.getElementById('closerSelect').value;
@@ -391,7 +450,7 @@ function renderIndividual() {
 
   const kpiEl = document.getElementById('indKpis');
   if (rows.length === 0) {
-    kpiEl.innerHTML = `<div class="empty">No data for ${closer} in this period</div>`;
+    kpiEl.innerHTML = `<div class="empty">No data for ${closer} in this period</div>` + misCardsHtml(closer);
   } else {
     kpiEl.innerHTML = `
       <div class="kpi-card"><div class="label">Connected Ratio</div><div class="value">${fmtPct(a.connectedRatio)}</div>${badgeFor('connectedRatio', a.connectedRatio)}</div>
@@ -400,7 +459,7 @@ function renderIndividual() {
       <div class="kpi-card"><div class="label">Booking Amount</div><div class="value">${fmtMoney(a.bookingAmount)}</div></div>
       <div class="kpi-card"><div class="label">Converted Sales</div><div class="value">${a.convertedSalesCount}</div></div>
       <div class="kpi-card"><div class="label">Avg Talk Time</div><div class="value">${a.avgTalkTime === null ? '—' : a.avgTalkTime.toFixed(1) + 'm'}</div></div>
-    `;
+    ` + misCardsHtml(closer);
   }
 
   // Trend chart — daily connected ratio & conversion % across the filtered range
