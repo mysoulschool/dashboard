@@ -184,6 +184,10 @@ select{
       <h3>Booking Amount by closer</h3>
       <div class="chart-wrap"><canvas id="teamChart2"></canvas></div>
     </div>
+    <div class="chart-card">
+      <h3>Student Sheet Sales by closer</h3>
+      <div class="chart-wrap"><canvas id="teamChart3"></canvas></div>
+    </div>
   </div>
 
   <div id="leaderboard" class="section">
@@ -204,6 +208,11 @@ const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyse1cWGQYlQXVT
 // on purpose. Replace with the /exec URL once MIS_Scores.gs is deployed.
 const MIS_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwUxUywO53qBIpSM53UDfldZueuYZsUTLUwdXbbQ8T2RRf7jGvyHQuP_QWavAtVU1gq/exec";
 
+// Separate deployment for Student Record Sheet sales — different sheet,
+// different script, on purpose. Replace with the /exec URL once
+// Sales_Data.gs is deployed.
+const SALES_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzkkJ0TaIQF-PuoCw4pnEMacIoHf1Mr9sQ2u3Nb78s6aDRowQNy9lzWVEbLjNOwQ7Oq/exec";
+
 let CLOSERS = []; // populated from API response after load
 const BENCHMARKS = {
   connectedRatio: { green: 60, yellow: 55 },   // >= green, else >= yellow, else red
@@ -218,7 +227,8 @@ const MIS_BENCHMARK = { green: -10, yellow: -25 }; // >= green, else >= yellow, 
 let RAW = {};       // { closerName: [ {date, qualityScore, leadsAssigned, callsAttempted, connected, totalTalkTime, convertedSalesCount, bookingAmount}, ... ] }
 let MIS = {};        // { closerName: { workDonePct, onTimePct } } — populated separately, may stay {} if MIS fetch fails
 let misWeekLabel = '';
-let indChart, teamChart1, teamChart2;
+let SALES_RAW = {}; // { closerName: ["2026-07-01", "2026-07-03", ...] }, may stay {} if fetch fails
+let indChart, teamChart1, teamChart2, teamChart3;
 
 // ============ INIT ============
 async function init() {
@@ -243,6 +253,10 @@ async function init() {
   // or the sheet structure changes, the rest of the dashboard above is
   // unaffected — cards just show "MIS data unavailable" for those fields.
   loadMisScores();
+
+  // Student Sheet Sales fetch is also isolated the same way — if it fails,
+  // the Sales stat cards/chart just show 0, nothing else breaks.
+  loadSalesData();
 }
 
 async function loadMisScores() {
@@ -260,6 +274,19 @@ async function loadMisScores() {
   // Re-render just the individual view if it's already loaded, so MIS cards appear
   // without waiting for the next filter change.
   if (Object.keys(RAW).length) renderIndividual();
+}
+
+async function loadSalesData() {
+  try {
+    const res = await fetch(SALES_APPS_SCRIPT_URL);
+    if (!res.ok) throw new Error('Sales network response was not ok');
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    SALES_RAW = data;
+  } catch (err) {
+    SALES_RAW = {}; // fall back silently - cards/chart will just show 0 or be blank
+  }
+  if (Object.keys(RAW).length) { renderIndividual(); renderTeam(); }
 }
 
 function populateCloserSelect() {
@@ -360,6 +387,13 @@ function filterRows(closerName, range) {
   return rows.filter(r => inRange(r.date, range));
 }
 
+// Counts Student Record Sheet sales for a closer within a date range.
+// Standalone metric — not cross-checked against Booking Amount / Conversion %.
+function getSalesCount(closerName, range) {
+  const dates = SALES_RAW[closerName] || [];
+  return dates.filter(d => inRange(d, range)).length;
+}
+
 // ============ BADGE HELPERS ============
 function badgeFor(kpi, value) {
   if (value === null || value === undefined) return '<span class="badge neutral">No data</span>';
@@ -450,7 +484,8 @@ function renderIndividual() {
 
   const kpiEl = document.getElementById('indKpis');
   if (rows.length === 0) {
-    kpiEl.innerHTML = `<div class="empty">No data for ${closer} in this period</div>` + misCardsHtml(closer);
+    kpiEl.innerHTML = `<div class="empty">No data for ${closer} in this period</div>
+      <div class="kpi-card"><div class="label">Student Sheet Sales</div><div class="value">${getSalesCount(closer, range)}</div></div>` + misCardsHtml(closer);
   } else {
     kpiEl.innerHTML = `
       <div class="kpi-card"><div class="label">Connected Ratio</div><div class="value">${fmtPct(a.connectedRatio)}</div>${badgeFor('connectedRatio', a.connectedRatio)}</div>
@@ -459,6 +494,7 @@ function renderIndividual() {
       <div class="kpi-card"><div class="label">Booking Amount</div><div class="value">${fmtMoney(a.bookingAmount)}</div></div>
       <div class="kpi-card"><div class="label">Converted Sales</div><div class="value">${a.convertedSalesCount}</div></div>
       <div class="kpi-card"><div class="label">Avg Talk Time</div><div class="value">${a.avgTalkTime === null ? '—' : a.avgTalkTime.toFixed(1) + 'm'}</div></div>
+      <div class="kpi-card"><div class="label">Student Sheet Sales</div><div class="value">${getSalesCount(closer, range)}</div></div>
     ` + misCardsHtml(closer);
   }
 
@@ -513,6 +549,7 @@ function renderTeam() {
   const labels = perCloser.map(c => c.name);
   const crData = perCloser.map(c => c.a.connectedRatio === null ? 0 : +c.a.connectedRatio.toFixed(1));
   const bookingData = perCloser.map(c => c.a.bookingAmount);
+  const salesData = perCloser.map(c => getSalesCount(c.name, range));
 
   if (teamChart1) teamChart1.destroy();
   teamChart1 = new Chart(document.getElementById('teamChart1'), {
@@ -538,6 +575,20 @@ function renderTeam() {
       scales: {
         x: { ticks: { color: '#a7adbb', font: { size: 11 } }, grid: { display: false } },
         y: { ticks: { color: '#6b7180', font: { size: 10 }, callback: v => '₹' + v.toLocaleString('en-IN') }, grid: { color: '#232733' } }
+      }
+    }
+  });
+
+  if (teamChart3) teamChart3.destroy();
+  teamChart3 = new Chart(document.getElementById('teamChart3'), {
+    type: 'bar',
+    data: { labels, datasets: [{ label: 'Student Sheet Sales', data: salesData, backgroundColor: '#e8b93f', borderRadius: 6 }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#a7adbb', font: { size: 11 } }, grid: { display: false } },
+        y: { ticks: { color: '#6b7180', font: { size: 10 } }, grid: { color: '#232733' } }
       }
     }
   });
